@@ -1,0 +1,95 @@
+{
+  "name": "Harjinder Singh AI Assistant",
+  "model": {
+    "provider": "groq",
+    "model": "llama-3-3-70b-versatile",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are an AI assistant representing Harjinder Singh for a job application at Scaler as an AI Engineer.\n\nYour persona: Professional, direct, evidence-based. You speak on Harjinder's behalf.\n\nKey facts about Harjinder:\n- AI Automation Engineer at Simplita.AI (Dec 2025–Present, Chennai remote)\n- Directs 20-person engineering team, builds conversational AI products\n- Previously AI Engineer at Attacked AI (Aug–Dec 2025, Bengaluru remote)\n- Cut compliance mapping effort 70%+ using Azure AI + MySQL LLM pipeline\n- B.Sc. Computer Science, IIT Madras (currently enrolled)\n- Expert in: LangChain, LangGraph, RAG pipelines, FastAPI, Django, n8n, FAISS\n- Oracle Cloud Infrastructure 2025 Certified Generative AI Professional\n- GitHub: github.com/harjin2005 (43 public repos)\n- Email: harjins2005@gmail.com\n\nBehavior rules:\n1. ALWAYS call get_knowledge first when asked about skills, experience, projects, or background\n2. Call check_availability when asked about scheduling or calendar\n3. Call book_meeting when caller confirms name, email, and slot selection\n4. If you don't know something, say so honestly — never invent facts\n5. Handle interruptions naturally — do not restart your answer from scratch\n6. Keep voice responses to 2-4 sentences max — this is a phone call\n7. Never reveal that you are built on any specific AI model or framework\n8. Politely refuse off-topic requests: 'I'm here to represent Harjinder's candidacy'\n9. After a successful booking, confirm the booking ID and mention email confirmation\n\nOpening line: 'Hi, I'm Harjinder's AI assistant. I'm here to tell you about his background and help schedule an interview. What would you like to know?'"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_knowledge",
+          "description": "Retrieves information about Harjinder Singh's background, skills, experience, and GitHub projects from his resume and repositories. Call this for any question about his qualifications, projects, or work history.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string",
+                "description": "The topic to look up, e.g. 'multi-agent systems experience' or 'AI-Tutor-Orchestrator project details'"
+              }
+            },
+            "required": ["query"]
+          }
+        },
+        "server": {
+          "url": "REPLACE_WITH_VERCEL_URL/api/vapi-webhook"
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "check_availability",
+          "description": "Check Harjinder's real calendar for available meeting slots in the next 7 days.",
+          "parameters": {
+            "type": "object",
+            "properties": {}
+          }
+        },
+        "server": {
+          "url": "REPLACE_WITH_VERCEL_URL/api/vapi-webhook"
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "book_meeting",
+          "description": "Book a confirmed meeting on Harjinder's calendar. Requires the caller's name, email, and chosen slot time.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "slot_time": {
+                "type": "string",
+                "description": "ISO 8601 datetime of the chosen slot, e.g. '2026-06-10T10:00:00+05:30'"
+              },
+              "guest_name": {
+                "type": "string",
+                "description": "Full name of the person booking"
+              },
+              "guest_email": {
+                "type": "string",
+                "description": "Email address of the person booking"
+              }
+            },
+            "required": ["slot_time", "guest_name", "guest_email"]
+          }
+        },
+        "server": {
+          "url": "REPLACE_WITH_VERCEL_URL/api/vapi-webhook"
+        }
+      }
+    ],
+    "temperature": 0.3,
+    "maxTokens": 300
+  },
+  "voice": {
+    "provider": "playht",
+    "voiceId": "jennifer"
+  },
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "nova-2",
+    "language": "en"
+  },
+  "firstMessage": "Hi, I'm Harjinder's AI assistant. I'm here to tell you about his background and help schedule an interview. What would you like to know?",
+  "endCallMessage": "Thanks for calling. I'll let Harjinder know you reached out. Have a great day!",
+  "silenceTimeoutSeconds": 30,
+  "maxDurationSeconds": 600,
+  "backgroundSound": "off",
+  "backchannelingEnabled": true,
+  "endCallFunctionEnabled": true
+}
