@@ -6,22 +6,22 @@ const supabase = createClient(
 );
 
 async function embedQuery(text: string): Promise<number[]> {
-  const resp = await fetch("https://api.cohere.com/v2/embed", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.COHERE_API_KEY!}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      texts: [text],
-      model: "embed-english-v3.0",
-      input_type: "search_query",
-      embedding_types: ["float"],
-    }),
-  });
-  if (!resp.ok) throw new Error(`Cohere embed error: ${resp.status}`);
+  const key = process.env.GEMINI_API_KEY!;
+  const resp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${key}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "models/text-embedding-004",
+        content: { parts: [{ text }] },
+        taskType: "RETRIEVAL_QUERY",
+      }),
+    }
+  );
+  if (!resp.ok) throw new Error(`Gemini embed error: ${resp.status}`);
   const json = await resp.json();
-  return json.embeddings.float[0];
+  return json.embedding.values;
 }
 
 export async function retrieveContext(query: string): Promise<string> {

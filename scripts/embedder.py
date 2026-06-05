@@ -2,32 +2,31 @@ import os
 import requests
 from supabase import create_client
 
-COHERE_API_KEY = os.environ["COHERE_API_KEY"]
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 sb = create_client(
     os.environ["NEXT_PUBLIC_SUPABASE_URL"],
     os.environ["SUPABASE_SERVICE_ROLE_KEY"],
 )
 
-BATCH_SIZE = 20
+BATCH_SIZE = 20  # Gemini batch limit is 100, but 20 is safe
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    resp = requests.post(
-        "https://api.cohere.com/v2/embed",
-        headers={
-            "Authorization": f"Bearer {COHERE_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "texts": texts,
-            "model": "embed-english-v3.0",
-            "input_type": "search_document",
-            "embedding_types": ["float"],
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()["embeddings"]["float"]
+    embeddings = []
+    for text in texts:
+        resp = requests.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={GEMINI_API_KEY}",
+            headers={"Content-Type": "application/json"},
+            json={
+                "model": "models/text-embedding-004",
+                "content": {"parts": [{"text": text}]},
+                "taskType": "RETRIEVAL_DOCUMENT",
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        embeddings.append(resp.json()["embedding"]["values"])
+    return embeddings
 
 
 def embed_and_store(chunks: list[dict]) -> int:
