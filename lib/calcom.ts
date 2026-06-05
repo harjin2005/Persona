@@ -1,7 +1,12 @@
-const CAL_BASE = "https://api.cal.com/v1";
+const CAL_BASE = "https://api.cal.com/v2";
 const API_KEY = process.env.CALCOM_API_KEY!;
-const USERNAME = process.env.CALCOM_USERNAME!;
 const EVENT_TYPE_ID = Number(process.env.CALCOM_EVENT_TYPE_ID!);
+
+const CAL_HEADERS = {
+  Authorization: `Bearer ${API_KEY}`,
+  "cal-api-version": "2024-09-04",
+  "Content-Type": "application/json",
+};
 
 export type Slot = {
   time: string;
@@ -9,32 +14,27 @@ export type Slot = {
 };
 
 export async function getAvailableSlots(daysAhead = 7): Promise<Slot[]> {
-  const dateFrom = new Date();
-  const dateTo = new Date();
-  dateTo.setDate(dateTo.getDate() + daysAhead);
+  const start = new Date().toISOString();
+  const end = new Date(Date.now() + daysAhead * 86400000).toISOString();
 
   const params = new URLSearchParams({
-    apiKey: API_KEY,
-    username: USERNAME,
     eventTypeId: String(EVENT_TYPE_ID),
-    dateFrom: dateFrom.toISOString().split("T")[0],
-    dateTo: dateTo.toISOString().split("T")[0],
-    timeZone: "Asia/Kolkata",
+    start,
+    end,
   });
 
-  const resp = await fetch(`${CAL_BASE}/slots?${params}`);
+  const resp = await fetch(`${CAL_BASE}/slots?${params}`, { headers: CAL_HEADERS });
   if (!resp.ok) throw new Error(`Cal.com slots error: ${resp.status}`);
 
-  const data = await resp.json();
+  const json = await resp.json();
+  const slotsData = json.data as Record<string, Array<{ start: string }>>;
   const slots: Slot[] = [];
 
-  for (const times of Object.values(
-    data.slots as Record<string, Array<{ time: string }>>
-  )) {
-    for (const slot of (times as Array<{ time: string }>).slice(0, 3)) {
-      const d = new Date(slot.time);
+  for (const daySlots of Object.values(slotsData)) {
+    for (const slot of daySlots.slice(0, 3)) {
+      const d = new Date(slot.start);
       slots.push({
-        time: slot.time,
+        time: slot.start,
         label: d.toLocaleString("en-IN", {
           weekday: "short",
           month: "short",
@@ -61,19 +61,17 @@ export async function bookMeeting(params: {
   const body = {
     eventTypeId: EVENT_TYPE_ID,
     start: params.slotTime,
-    responses: {
+    attendee: {
       name: params.guestName,
       email: params.guestEmail,
-      notes: params.notes ?? "",
+      timeZone: "Asia/Kolkata",
     },
-    timeZone: "Asia/Kolkata",
-    language: "en",
     metadata: {},
   };
 
-  const resp = await fetch(`${CAL_BASE}/bookings?apiKey=${API_KEY}`, {
+  const resp = await fetch(`${CAL_BASE}/bookings`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...CAL_HEADERS, "cal-api-version": "2024-08-13" },
     body: JSON.stringify(body),
   });
 
@@ -84,7 +82,7 @@ export async function bookMeeting(params: {
 
   const data = await resp.json();
   return {
-    uid: data.uid,
-    meetingUrl: data.videoCallData?.url,
+    uid: data.data?.uid ?? data.uid,
+    meetingUrl: data.data?.meetingUrl,
   };
 }
