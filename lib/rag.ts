@@ -1,19 +1,31 @@
 import { createClient } from "@supabase/supabase-js";
-import OpenAI from "openai";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+async function embedQuery(text: string): Promise<number[]> {
+  const resp = await fetch("https://api.cohere.com/v2/embed", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.COHERE_API_KEY!}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      texts: [text],
+      model: "embed-english-v3.0",
+      input_type: "search_query",
+      embedding_types: ["float"],
+    }),
+  });
+  if (!resp.ok) throw new Error(`Cohere embed error: ${resp.status}`);
+  const json = await resp.json();
+  return json.embeddings.float[0];
+}
 
 export async function retrieveContext(query: string): Promise<string> {
-  const embResp = await openai.embeddings.create({
-    model: "text-embedding-3-small",
-    input: query,
-  });
-  const queryEmbedding = embResp.data[0].embedding;
+  const queryEmbedding = await embedQuery(query);
 
   const { data, error } = await supabase.rpc("match_documents", {
     query_embedding: queryEmbedding,
