@@ -15,7 +15,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     embeddings = []
     for text in texts:
         resp = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={GEMINI_API_KEY}",
+            f"https://generativelanguage.googleapis.com/v1/models/gemini-embedding-001:embedContent?key={GEMINI_API_KEY}",
             headers={"Content-Type": "application/json"},
             json={
                 "model": "models/gemini-embedding-001",
