@@ -18,9 +18,10 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
             f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={GEMINI_API_KEY}",
             headers={"Content-Type": "application/json"},
             json={
-                "model": "models/text-embedding-004",
+                "model": "models/gemini-embedding-001",
                 "content": {"parts": [{"text": text}]},
                 "taskType": "RETRIEVAL_DOCUMENT",
+                "outputDimensionality": 768,
             },
             timeout=15,
         )
